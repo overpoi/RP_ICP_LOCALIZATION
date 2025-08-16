@@ -23,6 +23,33 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
    */
   // TODO
 
+  if (!_map){
+    std:cerr << "No map initialized" << std::endl;
+    return;
+  }
+
+  //data
+  int rows = _map->rows();
+  int cols = _map->cols();
+  int resolution = _map->resolution();
+
+  //Scan the map for occupied cells
+  for (int r = 0; r < rows; ++r) {
+    for (int c = 0; c < cols; ++c) {
+      if ((*_map)(r,c) == CellType::Occupied) { //only if obstacle
+        cv::Point2i grid_point(r,c); //obstacle grid coord
+        std::cerr <<"grid_point (", <<grid_point.x, <<grid_point.y, <<")" <<std::endl; 
+
+        Eigen::Vector2f world_point = _map -> grid2world(grid_point); //grid coord --> world coord
+        std::cerr <<"world_point (", <<world_point[0], <<world_point[1], <<")" <<std::endl; 
+
+        _obst_vect.push_back(world_point); //obstacle coordinates vector
+      }
+    }
+  }
+
+
+
   // Create KD-Tree
   // TODO
 }
