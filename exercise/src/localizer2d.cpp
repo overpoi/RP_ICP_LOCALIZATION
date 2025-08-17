@@ -44,7 +44,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
         std::cerr <<"world_point (", <<world_point[0], <<world_point[1], <<")" <<std::endl; 
 
         _obst_vect.push_back(world_point); //obstacle coordinates vector
-        //test  
+        //test  22
       }
     }
   }
