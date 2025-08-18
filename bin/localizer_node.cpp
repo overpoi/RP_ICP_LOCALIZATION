@@ -103,11 +103,11 @@ void callback_initialpose(
 
   // TODO
 
-
+    //Convert PoseWihthCovarianceStamped msg --> Eigen isometry --> Inform localizer
     Eigen::Isometry2f iso;
     pose2isometry(msg_->pose.pose,iso);
     localizer.setInitialPose(iso);
-    }
+    } 
 
 
 void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
@@ -116,7 +116,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    * [std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>]
    */
   // TODO
-
+  //Laserscan --> EigenPoints
   Localizer2D::ContainerType scanned_points;
 
   scan2eigen(msg_, scanned_points);
@@ -129,15 +129,15 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   //Set laser parameters in localizer
 
   //parameters
-  float r_min = msg_ -> range_min;
-  float r_max = msg_ -> range_max;
-  float a_min = msg_ -> angle_min;
-  float a_max = msg_ -> angle_max;
-  float a_incr = msg_ -> angle_increment;
+  float r_min = msg_ -> range_min; //min range value
+  float r_max = msg_ -> range_max;  //max range value
+  float a_min = msg_ -> angle_min; //starting angle of scan
+  float a_max = msg_ -> angle_max; //end angle of scan
+  float a_incr = msg_ -> angle_increment; //angular distance between measurements
 
   localizer.setLaserParams(r_min, r_max, a_min, a_max, a_incr);
 
-  //Process incoming scan 
+  //Process incoming scan (scan points --> map points)
   localizer.process(scanned_points);
    
   // TODO
@@ -154,14 +154,15 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    * received message (msg_->header.stamp)
    */
 
+
+
   Eigen::Isometry2f curr_estimate = localizer.X();
   
   //Initialize transformStamped message
   geometry_msgs::TransformStamped transform_stamped_message;
 
+  //Convert Eigen --> TF message to broadcast
   isometry2transformStamped(curr_estimate, transform_stamped_message, FRAME_WORLD, FRAME_LASER, msg_->header.stamp);
-
-
   static tf2_ros::TransformBroadcaster br;
 
   // broadcast the transform
@@ -176,6 +177,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    */
   // TODO
 
+  //Transform stamped message to odometry message 
   nav_msgs::Odometry odometry_message;
 
   transformStamped2odometry(transform_stamped_message, odometry_message);
@@ -185,6 +187,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   // Sends a copy of msg_ with FRAME_LASER set as frame_id
   // Used to visualize the scan attached to the current laser estimate.
+  //Scan --> FRAME_LASER
   sensor_msgs::LaserScan out_scan = *msg_;
   out_scan.header.frame_id = FRAME_LASER;
   pub_scan.publish(out_scan);
