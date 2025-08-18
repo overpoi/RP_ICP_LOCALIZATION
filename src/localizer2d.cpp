@@ -24,7 +24,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
   // TODO
 
   if (!_map){
-    std:cerr << "No map initialized" << std::endl;
+    std::cerr << "No map initialized" << std::endl;
     return;
   }
 
@@ -38,10 +38,10 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
     for (int c = 0; c < cols; ++c) {
       if ((*_map)(r,c) == CellType::Occupied) { //only if obstacle
         cv::Point2i grid_point(r,c); //obstacle grid coord
-        std::cerr <<"grid_point (", <<grid_point.x, <<grid_point.y, <<")" <<std::endl; 
+        std::cerr << "grid_point (" << grid_point.x << ", " << grid_point.y << ")" << std::endl;
 
         Eigen::Vector2f world_point = _map -> grid2world(grid_point); //grid coord --> world coord
-        std::cerr <<"world_point (", <<world_point[0], <<world_point[1], <<")" <<std::endl; 
+        std::cerr << "world_point (" << world_point[0] << ", " << world_point[1] << ")" << std::endl;
 
         _obst_vect.push_back(world_point); //obstacle coordinates vector
         //test  22
