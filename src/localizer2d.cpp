@@ -53,6 +53,11 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
 
   // Create KD-Tree
   // TODO
+  _obst_tree_ptr = make_shared<TreeType>(_obst_vect.begin(), _obst_vect.end());
+
+  if(!_obst_tree_ptr) {
+    ROS_ERROR("Obst_tree_pointer is null!");
+  }
 }
 
 /**
@@ -62,6 +67,8 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
  */
 void Localizer2D::setInitialPose(const Eigen::Isometry2f& initial_pose_) {
   // TODO
+
+  _laser_in_world = initial_pose_;   //TODOTODO
 }
 
 /**
@@ -73,6 +80,8 @@ void Localizer2D::setInitialPose(const Eigen::Isometry2f& initial_pose_) {
 void Localizer2D::process(const ContainerType& scan_) {
   // Use initial pose to get a synthetic scan to compare with scan_
   // TODO
+
+  
 
   /**
    * Align prediction and scan_ using ICP.
