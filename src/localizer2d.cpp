@@ -145,29 +145,38 @@ void Localizer2D::setLaserParams(float range_min_, float range_max_,
  */
 void Localizer2D::getPrediction(ContainerType& prediction_) {
   prediction_.clear();
-  /**
-   * To compute the prediction, query the KD-Tree and search for all points
-   * around the current laser_in_world estimate.
-   * You may use additional sensor's informations to refine the prediction.
-   */
-  // TODO
+
+  // Guard: KD-tree must be ready
+  if (!_obst_tree_ptr) {
+    ROS_WARN_THROTTLE(5.0, "KD-tree not ready; prediction skipped");
+    return;
+  }
 
   // Collect near map points from the KD-tree
   std::vector<PointType*> neighbours;
-  //const int search_radius = 5;
-  const int search_radius = 10;
+  const float search_radius = 10;  
   _obst_tree_ptr->fullSearch(neighbours, _laser_in_world.translation(), search_radius);
 
   ROS_INFO("Prediction: found %zu nearby points", neighbours.size());
 
   // Check which points fall inside the sensor limits
-  for (PointType* p : neighbours) { //for each obstacle point
-    Eigen::Vector2f diff = *p - _laser_in_world.translation(); //from laser to map point (laser position bias)
-    float dist = diff.norm(); //length of diff vector
-    float ang  = std::atan2(diff.y(), diff.x()); //bearing direction wrt laser
+  const Eigen::Isometry2f laser_to_world = _laser_in_world.inverse();
 
-    if (dist <= _range_max && ang >= _angle_min && ang <= _angle_max) { //check if obs visible by laser
-      prediction_.push_back(*p);
+  for (PointType* p : neighbours) {
+    const Eigen::Vector2f point_world_frame = *p; // world frame
+    const Eigen::Vector2f point_laser_frame = (laser_to_world * point_world_frame.homogeneous()).head<2>(); // laser frame
+
+    const float dist = point_laser_frame.norm();
+    const float ang  = std::atan2(point_laser_frame.y(), point_laser_frame.x());
+
+    if (dist >= _range_min && dist <= _range_max &&
+        ang  >= _angle_min && ang  <= _angle_max) {
+
+
+      // Prediction in world frame
+      prediction_.push_back(point_world_frame);
     }
   }
+  
 }
+

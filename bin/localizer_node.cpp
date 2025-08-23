@@ -121,6 +121,11 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    * [std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>]
    */
   // TODO
+  //map must be initialized before processing scans
+  if (!map_ptr || !map_ptr->initialized()) {
+    ROS_WARN_THROTTLE(5.0, "Map not initialized yet; skipping scan.");
+    return;
+  }
   //Laserscan --> EigenPoints
 
   //Localizer2D::ContainerType scanned_points;
@@ -160,6 +165,9 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    * received message (msg_->header.stamp)
    */
 
+  const ros::Time stamp = msg_->header.stamp;
+
+
 
 
   Eigen::Isometry2f curr_estimate = localizer.X();
@@ -168,7 +176,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   geometry_msgs::TransformStamped transform_stamped_message;
 
   //Convert Eigen --> TF message to broadcast
-  isometry2transformStamped(curr_estimate, transform_stamped_message, FRAME_WORLD, FRAME_LASER, msg_->header.stamp);
+  isometry2transformStamped(curr_estimate, transform_stamped_message, FRAME_WORLD, FRAME_LASER, stamp);
   static tf2_ros::TransformBroadcaster br;
 
   // broadcast the transform
@@ -193,6 +201,9 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   transformStamped2odometry(transform_stamped_message, odometry_message);
 
+  odometry_message.header.stamp    = stamp;
+  odometry_message.header.frame_id = FRAME_WORLD;
+  odometry_message.child_frame_id  = FRAME_LASER;
   pub_odom.publish(odometry_message);
 
 
@@ -200,6 +211,16 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   // Used to visualize the scan attached to the current laser estimate.
   //Scan --> FRAME_LASERs
   sensor_msgs::LaserScan out_scan = *msg_;
+  out_scan.header.stamp = stamp;        
   out_scan.header.frame_id = FRAME_LASER;
+
+  ROS_INFO("OUTSCAN: a_min=%.3f a_max=%.3f a_inc=%.5f r_min=%.2f r_max=%.2f size=%zu first=%.3f",
+         out_scan.angle_min, out_scan.angle_max, out_scan.angle_increment,
+         out_scan.range_min, out_scan.range_max,
+         out_scan.ranges.size(),
+         std::isfinite(out_scan.ranges.empty()?NAN:out_scan.ranges[0]) ? out_scan.ranges[0] : NAN);
+
+
+
   pub_scan.publish(out_scan);
 }
