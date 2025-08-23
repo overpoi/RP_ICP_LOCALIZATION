@@ -37,7 +37,7 @@ class Localizer2D {
   /**
    * @brief Set the parameters of the laser scanner. Used to predict
    * measurements.
-   * These parameters should be taken from the incoming sensor_msgs::LaserScan
+   * These parameters should be taken from the incoming sensor_msgs::LaserScan  
    * message
    *
    * For further documentation, refer to:

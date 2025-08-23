@@ -2,7 +2,7 @@
 
 void scan2eigen(const sensor_msgs::LaserScan::ConstPtr& msg_,
                 std::vector<Eigen::Vector2f,
-                            Eigen::aligned_allocator<Eigen::Vector2f>>& dest_) {
+                            Eigen::aligned_allocator<Eigen::Vector2f>>& dest_) { //scans --> eigen2f 
   /**
    * @brief Unproject points stored as ranges in a sensor_msgs::LaserScan
    * message into a more suitable std::vector<Eigen::Vector2f> format.
@@ -49,7 +49,7 @@ void eigen2scan(
 
   for (const auto& p : src_) {
     long int p_idx =
-        floor((atan2(p.y(), p.x()) - angle_min_) / angle_increment_);
+        floor((atan2(p.y(), p.x()) - angle_min_) / angle_increment_); //n of measurements
     if (p_idx < 0 || p_idx >= num_points) continue;
     dest_.ranges[p_idx] = p.norm();
   }
@@ -65,7 +65,7 @@ void isometry2transformStamped(const Eigen::Isometry2f& pose_,
                                geometry_msgs::TransformStamped& msg_,
                                const std::string& frame_id_,
                                const std::string& child_frame_id_,
-                               const ros::Time& stamp_) {
+                               const ros::Time& stamp_) { //broadcast pose
   /**
    * @brief To return results into the ROS environment, we need to represent our
    * sensor's pose into a suitable format (geometry_msgs::TransformStamped).

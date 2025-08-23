@@ -1,6 +1,7 @@
 #include "localizer2d.h"
-
 #include "icp/eigen_icp_2d.h"
+#include <ros/ros.h> 
+using namespace std;
 
 Localizer2D::Localizer2D()
     : _map(nullptr),
@@ -56,7 +57,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
   _obst_tree_ptr = make_shared<TreeType>(_obst_vect.begin(), _obst_vect.end());
 
   if(!_obst_tree_ptr) {
-    ROS_ERROR("Obst_tree_pointer is null!");
+    ROS_INFO("Obst_tree_pointer is null!");
   }
 }
 
@@ -68,7 +69,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
 void Localizer2D::setInitialPose(const Eigen::Isometry2f& initial_pose_) {
   // TODO
 
-  _laser_in_world = initial_pose_;   //TODOTODO
+  _laser_in_world = initial_pose_;   
 }
 
 /**
@@ -80,6 +81,10 @@ void Localizer2D::setInitialPose(const Eigen::Isometry2f& initial_pose_) {
 void Localizer2D::process(const ContainerType& scan_) {
   // Use initial pose to get a synthetic scan to compare with scan_
   // TODO
+  ContainerType prediction;
+  getPrediction(prediction);
+
+
 
   
 
@@ -89,12 +94,21 @@ void Localizer2D::process(const ContainerType& scan_) {
    * solver X before running ICP)
    */
   // TODO
+  //ICP
+
+  const int max_points_in_leaf= 10;
+  ICP icp(prediction, scan_, max_points_in_leaf);
+  icp.X() = _laser_in_world;
+  icp.run(64); //iterations
+
 
   /**
    * Store the solver result (X) as the new laser_in_world estimate
    *
    */
   // TODO
+
+  _laser_in_world = icp.X();
 }
 
 /**
@@ -137,4 +151,23 @@ void Localizer2D::getPrediction(ContainerType& prediction_) {
    * You may use additional sensor's informations to refine the prediction.
    */
   // TODO
+
+  // Collect near map points from the KD-tree
+  std::vector<PointType*> neighbours;
+  //const int search_radius = 5;
+  const int search_radius = 10;
+  _obst_tree_ptr->fullSearch(neighbours, _laser_in_world.translation(), search_radius);
+
+  ROS_INFO("Prediction: found %zu nearby points", neighbours.size());
+
+  // Check which points fall inside the sensor limits
+  for (PointType* p : neighbours) { //for each obstacle point
+    Eigen::Vector2f diff = *p - _laser_in_world.translation(); //from laser to map point (laser position bias)
+    float dist = diff.norm(); //length of diff vector
+    float ang  = std::atan2(diff.y(), diff.x()); //bearing direction wrt laser
+
+    if (dist <= _range_max && ang >= _angle_min && ang <= _angle_max) { //check if obs visible by laser
+      prediction_.push_back(*p);
+    }
+  }
 }

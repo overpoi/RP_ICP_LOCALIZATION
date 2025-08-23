@@ -15,6 +15,8 @@
 #include "map.h"
 #include "ros_bridge.h"
 
+using namespace std;
+
 // Map callback definition
 void callback_map(const nav_msgs::OccupancyGridConstPtr&);
 // Initial pose callback definition
@@ -23,7 +25,7 @@ void callback_initialpose(
 // Scan callback definition
 void callback_scan(const sensor_msgs::LaserScanConstPtr&);
 
-std::shared_ptr<Map> map_ptr = nullptr;
+shared_ptr<Map> map_ptr = nullptr;
 ros::Publisher pub_scan, pub_odom;
 ros::Subscriber map_sub, initial_pos_sub, base_scan_sub;
 
@@ -35,7 +37,7 @@ int main(int argc, char** argv) {
   // TODO
 
   // Create a NodeHandle to manage the node.
-  // The namespace of the node is set to global
+  // The namespace of the node is set to globalmap
   ros::NodeHandle nh("/node_localizer");
 
   // Create shared pointer for the Map object
@@ -46,14 +48,16 @@ int main(int argc, char** argv) {
   
   // * Subscribe to the topics:
   // * /map [nav_msgs::OccupancyGrid]
-  map_sub = nh.subscribe("/map", 10, callback_map);
-
   // * /initialpose [geometry_msgs::PoseWithCovarianceStamped]
-  initial_pos_sub = nh.subscribe("/initialpose", 10, callback_initialpose);
   // * /base_scan [sensor_msgs::LaserScan]
-  base_scan_sub = nh.subscribe("/base_scan", 10, callback_scan);
   // * and assign the correct callbacks
   // *
+
+
+  map_sub = nh.subscribe("/map", 10, callback_map);
+  initial_pos_sub = nh.subscribe("/initialpose", 10, callback_initialpose);
+  base_scan_sub = nh.subscribe("/base_scan", 10, callback_scan);
+  
   // * Advertise the following topic:
   // * /odom_out [nav_msgs::Odometry]
   pub_odom = nh.advertise<nav_msgs::Odometry>("/odom_out", 10);
@@ -94,7 +98,12 @@ void callback_map(const nav_msgs::OccupancyGridConstPtr& msg_) {
 }
 
 void callback_initialpose(
-    const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg_) {
+      const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg_) {
+    Eigen::Isometry2f iso;
+    pose2isometry(msg_->pose.pose,iso);
+    localizer.setInitialPose(iso);
+  } 
+
   /**
    * Convert the PoseWithCovarianceStamped message to an Eigen Isometry and
    * inform the localizer.
@@ -104,10 +113,6 @@ void callback_initialpose(
   // TODO
 
     //Convert PoseWihthCovarianceStamped msg --> Eigen isometry --> Inform localizer
-    Eigen::Isometry2f iso;
-    pose2isometry(msg_->pose.pose,iso);
-    localizer.setInitialPose(iso);
-    } 
 
 
 void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
@@ -117,8 +122,9 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    */
   // TODO
   //Laserscan --> EigenPoints
-  Localizer2D::ContainerType scanned_points;
 
+  //Localizer2D::ContainerType scanned_points;
+  std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>> scanned_points;
   scan2eigen(msg_, scanned_points);
 
 
@@ -167,6 +173,11 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   // broadcast the transform
   br.sendTransform(transform_stamped_message);
+
+  ROS_INFO("Broadcasted transform from %s frame to %s frame at time %.2f",
+         transform_stamped_message.header.frame_id.c_str(),
+         transform_stamped_message.child_frame_id.c_str(),
+         transform_stamped_message.header.stamp.toSec());
   // TODO
 
   /**
@@ -187,7 +198,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   // Sends a copy of msg_ with FRAME_LASER set as frame_id
   // Used to visualize the scan attached to the current laser estimate.
-  //Scan --> FRAME_LASER
+  //Scan --> FRAME_LASERs
   sensor_msgs::LaserScan out_scan = *msg_;
   out_scan.header.frame_id = FRAME_LASER;
   pub_scan.publish(out_scan);
