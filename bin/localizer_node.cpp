@@ -201,26 +201,13 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   transformStamped2odometry(transform_stamped_message, odometry_message);
 
-  odometry_message.header.stamp    = stamp;
-  odometry_message.header.frame_id = FRAME_WORLD;
-  odometry_message.child_frame_id  = FRAME_LASER;
   pub_odom.publish(odometry_message);
 
 
   // Sends a copy of msg_ with FRAME_LASER set as frame_id
   // Used to visualize the scan attached to the current laser estimate.
-  //Scan --> FRAME_LASERs
+  //Scan --> FRAME_LASER
   sensor_msgs::LaserScan out_scan = *msg_;
-  out_scan.header.stamp = stamp;        
   out_scan.header.frame_id = FRAME_LASER;
-
-  ROS_INFO("OUTSCAN: a_min=%.3f a_max=%.3f a_inc=%.5f r_min=%.2f r_max=%.2f size=%zu first=%.3f",
-         out_scan.angle_min, out_scan.angle_max, out_scan.angle_increment,
-         out_scan.range_min, out_scan.range_max,
-         out_scan.ranges.size(),
-         std::isfinite(out_scan.ranges.empty()?NAN:out_scan.ranges[0]) ? out_scan.ranges[0] : NAN);
-
-
-
   pub_scan.publish(out_scan);
 }
