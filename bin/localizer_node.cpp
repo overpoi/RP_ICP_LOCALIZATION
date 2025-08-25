@@ -211,3 +211,5 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   out_scan.header.frame_id = FRAME_LASER;
   pub_scan.publish(out_scan);
 }
+
+//test
