@@ -17,35 +17,33 @@
 
 using namespace std;
 
-// Map callback definition
+// Map, InitialPose, Scan 
+//Void function callback pre definition
 void callback_map(const nav_msgs::OccupancyGridConstPtr&);
-// Initial pose callback definition
-void callback_initialpose(
-    const geometry_msgs::PoseWithCovarianceStampedConstPtr&);
-// Scan callback definition
+void callback_initialpose(const geometry_msgs::PoseWithCovarianceStampedConstPtr&);
 void callback_scan(const sensor_msgs::LaserScanConstPtr&);
 
 shared_ptr<Map> map_ptr = nullptr;
 ros::Publisher pub_scan, pub_odom;
+
+// Map, InitialPose, Scan sub
 ros::Subscriber map_sub, initial_pos_sub, base_scan_sub;
 
 Localizer2D localizer;
 
 int main(int argc, char** argv) {
+  // TODO
   // Initialize ROS system
   ros::init(argc, argv, "localizer_node");
-  // TODO
 
   // Create a NodeHandle to manage the node.
-  // The namespace of the node is set to globalmap
-  ros::NodeHandle nh("/node_localizer");
+  // The namespace of the node is set to globalmap --> "/" 
+  ros::NodeHandle nh("/");
 
   // Create shared pointer for the Map object
   // TODO
   map_ptr = std::make_shared<Map>();
 
-  //
-  
   // * Subscribe to the topics:
   // * /map [nav_msgs::OccupancyGrid]
   // * /initialpose [geometry_msgs::PoseWithCovarianceStamped]
@@ -53,17 +51,15 @@ int main(int argc, char** argv) {
   // * and assign the correct callbacks
   // *
 
-
   map_sub = nh.subscribe("/map", 10, callback_map);
   initial_pos_sub = nh.subscribe("/initialpose", 10, callback_initialpose);
   base_scan_sub = nh.subscribe("/base_scan", 10, callback_scan);
   
   // * Advertise the following topic:
   // * /odom_out [nav_msgs::Odometry]
+  // TODO
   pub_odom = nh.advertise<nav_msgs::Odometry>("/odom_out", 10);
    
-  // TODO
-
   // Scan advertiser for visualization purposes
   pub_scan = nh.advertise<sensor_msgs::LaserScan>("/scan_out", 10);
 
@@ -72,7 +68,7 @@ int main(int argc, char** argv) {
   // Spin the node
   ros::spin();
 
-  return 0;
+  return 0; //successful return 
 }
 
 void callback_map(const nav_msgs::OccupancyGridConstPtr& msg_) {
@@ -82,7 +78,7 @@ void callback_map(const nav_msgs::OccupancyGridConstPtr& msg_) {
 
   // TODO
 
-  if(!map_ptr->initialized()){
+  if(!map_ptr->initialized()){ //if map isnt initialized
 
     ROS_INFO("Map Initialized: %u x %u, res=%.3f, origin=(%.2f, %.2f, %.2f)",
              msg_->info.width, msg_->info.height, msg_->info.resolution,
@@ -90,18 +86,18 @@ void callback_map(const nav_msgs::OccupancyGridConstPtr& msg_) {
              msg_->info.origin.position.y,
              msg_->info.origin.position.z);
     
-    map_ptr->loadOccupancyGrid(msg_);
+    map_ptr->loadOccupancyGrid(msg_); //load occupancy grid --> Unknown = -1, Free = 0, Occupied = 100
 
-    localizer.setMap(map_ptr);
+    localizer.setMap(map_ptr); //pass map to localizer
 
   }
 }
 
 void callback_initialpose(
-      const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg_) {
-    Eigen::Isometry2f iso;
-    pose2isometry(msg_->pose.pose,iso);
-    localizer.setInitialPose(iso);
+      const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg_) { 
+    Eigen::Isometry2f isometry_2d; //create empty isometry2d
+    pose2isometry(msg_->pose.pose,isometry_2d); //convert pose 2 isometry
+    localizer.setInitialPose(isometry_2d); //pass initial pose
   } 
 
   /**
@@ -121,25 +117,21 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    * [std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>>]
    */
   // TODO
-  //map must be initialized before processing scans
+
+  //Check that map is initialized before scan
   if (!map_ptr || !map_ptr->initialized()) {
-    ROS_WARN_THROTTLE(5.0, "Map not initialized yet; skipping scan.");
+    ROS_WARN_THROTTLE(10.0, "Map not initialized yet; skipping scan.");
     return;
   }
-  //Laserscan --> EigenPoints
 
-  //Localizer2D::ContainerType scanned_points;
   std::vector<Eigen::Vector2f, Eigen::aligned_allocator<Eigen::Vector2f>> scanned_points;
-  scan2eigen(msg_, scanned_points);
+  scan2eigen(msg_, scanned_points); //Laserscan --> EigenPoints
 
-
-  
   // * Set the laser parameters and process the incoming scan through the
   // * localizer
 
   //Set laser parameters in localizer
-
-  //parameters
+  //TODO
   float r_min = msg_ -> range_min; //min range value
   float r_max = msg_ -> range_max;  //max range value
   float a_min = msg_ -> angle_min; //starting angle of scan
@@ -151,8 +143,6 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   //Process incoming scan (scan points --> map points)
   localizer.process(scanned_points);
    
-  // TODO
-
   /**
    * Send a transform message between FRAME_WORLD and FRAME_LASER.
    * The transform should contain the pose of the laser with respect to the map
@@ -168,19 +158,16 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   const ros::Time stamp = msg_->header.stamp;
 
 
-
-
-  Eigen::Isometry2f curr_estimate = localizer.X();
+  Eigen::Isometry2f curr_estimate = localizer.X(); //get gurrent estimate
   
-  //Initialize transformStamped message
+  //Create transformStamped message
   geometry_msgs::TransformStamped transform_stamped_message;
 
-  //Convert Eigen --> TF message to broadcast
+  //Convert Eigen transform --> TransformStamped message to broadcast
   isometry2transformStamped(curr_estimate, transform_stamped_message, FRAME_WORLD, FRAME_LASER, stamp);
-  static tf2_ros::TransformBroadcaster br;
+  static tf2_ros::TransformBroadcaster br; //tf broadcaster
+  br.sendTransform(transform_stamped_message);   // send broadcast the transform
 
-  // broadcast the transform
-  br.sendTransform(transform_stamped_message);
 
   ROS_INFO("Broadcasted transform from %s frame to %s frame at time %.2f",
          transform_stamped_message.header.frame_id.c_str(),
@@ -197,19 +184,17 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   // TODO
 
   //Transform stamped message to odometry message 
-  nav_msgs::Odometry odometry_message;
+  nav_msgs::Odometry odometry_message; //create odometry msg 
 
-  transformStamped2odometry(transform_stamped_message, odometry_message);
+  transformStamped2odometry(transform_stamped_message, odometry_message); //convert transformstamped to odometry
 
   pub_odom.publish(odometry_message);
 
 
   // Sends a copy of msg_ with FRAME_LASER set as frame_id
   // Used to visualize the scan attached to the current laser estimate.
-  //Scan --> FRAME_LASER
+  //Scan --> FRAME_LASER changing ID --> publish
   sensor_msgs::LaserScan out_scan = *msg_;
   out_scan.header.frame_id = FRAME_LASER;
   pub_scan.publish(out_scan);
 }
-
-//test
