@@ -85,8 +85,8 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 5
-      Size (m): 0.009999999776482582
-      Style: Points
+      Size (m): 0.10
+      Style: Flat Squares
       Topic: /scan_prediction
       Unreliable: false
       Use Fixed Frame: true
@@ -113,8 +113,8 @@ Visualization Manager:
       Queue Size: 6
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Points
+      Size (m): 0.10
+      Style: Flat Squares
       Topic: /scan_out
       Unreliable: false
       Use Fixed Frame: true
@@ -140,7 +140,7 @@ Visualization Manager:
       Marker Alpha: 1
       Marker Scale: 5
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
@@ -166,7 +166,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Keep: 100
       Name: Odometry
       Position Tolerance: 0.10000000149011612

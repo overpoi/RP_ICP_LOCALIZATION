@@ -155,7 +155,7 @@ void Localizer2D::getPrediction(ContainerType& prediction_) {
   const float search_radius = 10;  //10m
   _obst_tree_ptr->fullSearch(neighbours, _laser_in_world.translation(), search_radius);
 
-  ROS_INFO("Prediction: found %zu nearby points", neighbours.size());
+  ROS_INFO_THROTTLE(5, "Prediction: found %zu nearby points", neighbours.size());
 
   // Check which points fall inside the sensor limits
   const Eigen::Isometry2f world_to_laser = _laser_in_world.inverse();

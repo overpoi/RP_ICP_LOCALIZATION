@@ -169,10 +169,12 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   br.sendTransform(transform_stamped_message);   // send broadcast the transform
 
 
-  ROS_INFO("Broadcasted transform from %s frame to %s frame at time %.2f",
+  ROS_INFO_THROTTLE(20, "Broadcasted transform from %s frame to %s frame at time %.2f",
          transform_stamped_message.header.frame_id.c_str(),
          transform_stamped_message.child_frame_id.c_str(),
          transform_stamped_message.header.stamp.toSec());
+
+
   // TODO
 
   /**
