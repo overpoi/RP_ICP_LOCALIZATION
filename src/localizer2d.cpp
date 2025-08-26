@@ -38,28 +38,29 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
       if ((*_map)(r,c) == CellType::Occupied) { //only if obstacle
-        cv::Point2i grid_point(r,c); //obstacle grid coord
+        cv::Point2i grid_point(r,c); //create obstacle grid coord of obstacle
         std::cerr << "grid_point (" << grid_point.x << ", " << grid_point.y << ")" << std::endl;
 
-        Eigen::Vector2f world_point = _map -> grid2world(grid_point); //grid coord --> world coord
+        Eigen::Vector2f world_point = _map -> grid2world(grid_point); //map grid coord --> world coord
         std::cerr << "world_point (" << world_point[0] << ", " << world_point[1] << ")" << std::endl;
 
         _obst_vect.push_back(world_point); //obstacle coordinates vector
-        //test  22
+        
       }
     }
   }
 
-
-
   // Create KD-Tree
   // TODO
-  _obst_tree_ptr = make_shared<TreeType>(_obst_vect.begin(), _obst_vect.end());
+  _obst_tree_ptr = make_shared<TreeType>(_obst_vect.begin(), _obst_vect.end()); //KD tree over obstacle points 
 
   if(!_obst_tree_ptr) {
     ROS_INFO("Obst_tree_pointer is null!");
   }
-}
+} //setMap
+
+
+
 
 /**
  * @brief Set the current estimate for laser_in_world
@@ -68,7 +69,6 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
  */
 void Localizer2D::setInitialPose(const Eigen::Isometry2f& initial_pose_) {
   // TODO
-
   _laser_in_world = initial_pose_;   
 }
 
@@ -82,11 +82,9 @@ void Localizer2D::process(const ContainerType& scan_) {
   // Use initial pose to get a synthetic scan to compare with scan_
   // TODO
   ContainerType prediction;
-  getPrediction(prediction);
+  getPrediction(prediction); //predicted scan
 
 
-
-  
 
   /**
    * Align prediction and scan_ using ICP.
@@ -96,10 +94,10 @@ void Localizer2D::process(const ContainerType& scan_) {
   // TODO
   //ICP
 
-  const int max_points_in_leaf= 10;
-  ICP icp(prediction, scan_, max_points_in_leaf);
-  icp.X() = _laser_in_world;
-  icp.run(64); //iterations
+  const int max_points_in_leaf= 10; //lower --> slower since tree is deeper 
+  ICP icp(prediction, scan_, max_points_in_leaf); //ICP from prediction to scan_, KD tree parameter
+  icp.X() = _laser_in_world; //ICP point estimae = initial guess
+  icp.run(50); //iterations
 
 
   /**
@@ -108,7 +106,7 @@ void Localizer2D::process(const ContainerType& scan_) {
    */
   // TODO
 
-  _laser_in_world = icp.X();
+  _laser_in_world = icp.X(); //set after convergence
 }
 
 /**
@@ -154,27 +152,27 @@ void Localizer2D::getPrediction(ContainerType& prediction_) {
 
   // Collect near map points from the KD-tree
   std::vector<PointType*> neighbours;
-  const float search_radius = 10;  
+  const float search_radius = 10;  //10m
   _obst_tree_ptr->fullSearch(neighbours, _laser_in_world.translation(), search_radius);
 
   ROS_INFO("Prediction: found %zu nearby points", neighbours.size());
 
   // Check which points fall inside the sensor limits
-  const Eigen::Isometry2f laser_to_world = _laser_in_world.inverse();
+  const Eigen::Isometry2f world_to_laser = _laser_in_world.inverse();
 
   for (PointType* p : neighbours) {
-    const Eigen::Vector2f point_world_frame = *p; // world frame
-    const Eigen::Vector2f point_laser_frame = (laser_to_world * point_world_frame.homogeneous()).head<2>(); // laser frame
+    const Eigen::Vector2f point_world_frame = *p; 
+    const Eigen::Vector2f point_laser_frame = (world_to_laser * point_world_frame.homogeneous()).head<2>(); // for points in world frame transform in laser frame to check range and bearing
 
-    const float dist = point_laser_frame.norm();
-    const float ang  = std::atan2(point_laser_frame.y(), point_laser_frame.x());
+    const float dist = point_laser_frame.norm(); //range
+    const float ang  = std::atan2(point_laser_frame.y(), point_laser_frame.x()); //bearing
 
     if (dist >= _range_min && dist <= _range_max &&
-        ang  >= _angle_min && ang  <= _angle_max) {
+        ang  >= _angle_min && ang  <= _angle_max) { //check laser fov
 
 
       // Prediction in world frame
-      prediction_.push_back(point_world_frame);
+      prediction_.push_back(point_world_frame); //append to prediction the coord of visible obstacles in world frame
     }
   }
   

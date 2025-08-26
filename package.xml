@@ -3,7 +3,7 @@
     <name>icp_localization</name>
     <version>1.0.0</version>
     <description>TODO</description>
-    <maintainer email="rp@todo.net">TODO</maintainer>
+    <maintainer email="giacomogarufi@hotmail.it">TODO</maintainer>
     <buildtool_depend>catkin</buildtool_depend>
     <license>BSD</license>
     
