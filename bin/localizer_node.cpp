@@ -140,8 +140,8 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   localizer.setLaserParams(r_min, r_max, a_min, a_max, a_incr);
 
-  //Process incoming scan (scan points --> map points)
-  localizer.process(scanned_points);
+  //Process incoming scan
+  localizer.process(scanned_points); // run ICP
    
   /**
    * Send a transform message between FRAME_WORLD and FRAME_LASER.
