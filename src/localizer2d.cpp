@@ -162,7 +162,7 @@ void Localizer2D::getPrediction(ContainerType& prediction_) {
 
   for (PointType* p : neighbours) {
     const Eigen::Vector2f point_world_frame = *p; 
-    const Eigen::Vector2f point_laser_frame = (world_in_laser * point_world_frame.homogeneous()).head<2>(); // for points in world frame transform in laser frame to check range and bearing
+    const Eigen::Vector2f point_laser_frame = (world_in_laser * point_world_frame.homogeneous()).head<2>(); // for points in world frame transform in laser frame to check laser range and bearing
 
     const float dist = point_laser_frame.norm(); //range
     const float ang  = std::atan2(point_laser_frame.y(), point_laser_frame.x()); //bearing

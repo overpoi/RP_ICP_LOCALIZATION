@@ -186,7 +186,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   //Transform stamped message to odometry message 
   nav_msgs::Odometry odometry_message; //create odometry msg 
 
-  transformStamped2odometry(transform_stamped_message, odometry_message); //convert transformstamped to odometry
+  transformStamped2odometry(transform_stamped_message, odometry_message); //convert transform_stamped to odometry
 
   pub_odom.publish(odometry_message);
 
