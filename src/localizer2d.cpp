@@ -37,7 +37,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
   //Scan the map for occupied cells
   for (int r = 0; r < rows; ++r) {
     for (int c = 0; c < cols; ++c) {
-      if ((*_map)(r,c) == CellType::Occupied) { //only if obstacle
+      if ((*_map)(r,c) == CellType::Occupied) { 
         cv::Point2i grid_point(r,c); //create obstacle grid coord of obstacle
         std::cerr << "grid_point (" << grid_point.x << ", " << grid_point.y << ")" << std::endl;
 
@@ -52,7 +52,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
 
   // Create KD-Tree
   // TODO
-  _obst_tree_ptr = make_shared<TreeType>(_obst_vect.begin(), _obst_vect.end()); //KD tree over obstacle points 
+  _obst_tree_ptr = make_shared<TreeType>(_obst_vect.begin(), _obst_vect.end()); //KD tree over obstacle points. from eigen_kdtree --> iterator, max poits in leaf default = 20 
 
   if(!_obst_tree_ptr) {
     ROS_INFO("Obst_tree_pointer is null!");
@@ -94,10 +94,10 @@ void Localizer2D::process(const ContainerType& scan_) {
   // TODO
   //ICP
 
-  const int max_points_in_leaf= 10; //lower --> slower since tree is deeper 
+  const int max_points_in_leaf= 20; //less leaves --> more precise
   ICP icp(prediction, scan_, max_points_in_leaf); //ICP from prediction to scan_, KD tree parameter
   icp.X() = _laser_in_world; //ICP point estimae = initial guess
-  icp.run(50); //iterations
+  icp.run(50); 
 
 
   /**
@@ -158,11 +158,11 @@ void Localizer2D::getPrediction(ContainerType& prediction_) {
   ROS_INFO("Prediction: found %zu nearby points", neighbours.size());
 
   // Check which points fall inside the sensor limits
-  const Eigen::Isometry2f world_to_laser = _laser_in_world.inverse();
+  const Eigen::Isometry2f world_in_laser = _laser_in_world.inverse();
 
   for (PointType* p : neighbours) {
     const Eigen::Vector2f point_world_frame = *p; 
-    const Eigen::Vector2f point_laser_frame = (world_to_laser * point_world_frame.homogeneous()).head<2>(); // for points in world frame transform in laser frame to check range and bearing
+    const Eigen::Vector2f point_laser_frame = (world_in_laser * point_world_frame.homogeneous()).head<2>(); // for points in world frame transform in laser frame to check range and bearing
 
     const float dist = point_laser_frame.norm(); //range
     const float ang  = std::atan2(point_laser_frame.y(), point_laser_frame.x()); //bearing

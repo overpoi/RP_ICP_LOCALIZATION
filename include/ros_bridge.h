@@ -17,7 +17,7 @@ void eigen2scan(
     sensor_msgs::LaserScan& dest_, float range_min_, float range_max_,
     float angle_min_, float angle_max_, float angle_increment_); //Eigen vector --> Laser scan 
 
-void isometry2transformStamped(const Eigen::Isometry2f& pose_, //translation + rotation
+void isometry2transformStamped(const Eigen::Isometry2f& pose_, //input translation + rotation 
                                geometry_msgs::TransformStamped& msg_, //broadcast output
                                const std::string& frame_id_, //map
                                const std::string& child_frame_id_, //base_laser_link
