@@ -12,7 +12,7 @@
 #include "constants.h"
 #include "icp/eigen_kdtree.h"
 #include "localizer2d.h"
-#include "map.h"
+#include "map.h" 
 #include "ros_bridge.h"
 
 using namespace std;
@@ -60,12 +60,11 @@ int main(int argc, char** argv) {
   // TODO
   pub_odom = nh.advertise<nav_msgs::Odometry>("/odom_out", 10);
    
-  // Scan advertiser for visualization purposes
+  // Scan advertiser for visualization 
   pub_scan = nh.advertise<sensor_msgs::LaserScan>("/scan_out", 10);
 
   ROS_INFO("Node started. Waiting for input data");
 
-  // Spin the node
   ros::spin();
 
   return 0; //successful return 
@@ -140,8 +139,8 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
 
   localizer.setLaserParams(r_min, r_max, a_min, a_max, a_incr);
 
-  //Process incoming scan (scan points --> map points)
-  localizer.process(scanned_points);
+  //Process incoming scan
+  localizer.process(scanned_points); //process incoming scan through localizer to get estimate
    
   /**
    * Send a transform message between FRAME_WORLD and FRAME_LASER.
@@ -155,16 +154,15 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
    * received message (msg_->header.stamp)
    */
 
-  const ros::Time stamp = msg_->header.stamp;
+  const ros::Time stamp = msg_->header.stamp; 
 
-
-  Eigen::Isometry2f curr_estimate = localizer.X(); //get gurrent estimate
+  Eigen::Isometry2f current_estimate = localizer.X(); //get gurrent estimate
   
   //Create transformStamped message
   geometry_msgs::TransformStamped transform_stamped_message;
 
   //Convert Eigen transform --> TransformStamped message to broadcast
-  isometry2transformStamped(curr_estimate, transform_stamped_message, FRAME_WORLD, FRAME_LASER, stamp);
+  isometry2transformStamped(current_estimate, transform_stamped_message, FRAME_WORLD, FRAME_LASER, stamp);
   static tf2_ros::TransformBroadcaster br; //tf broadcaster
   br.sendTransform(transform_stamped_message);   // send broadcast the transform
 
@@ -188,7 +186,7 @@ void callback_scan(const sensor_msgs::LaserScanConstPtr& msg_) {
   //Transform stamped message to odometry message 
   nav_msgs::Odometry odometry_message; //create odometry msg 
 
-  transformStamped2odometry(transform_stamped_message, odometry_message); //convert transformstamped to odometry
+  transformStamped2odometry(transform_stamped_message, odometry_message); //convert transform_stamped to odometry
 
   pub_odom.publish(odometry_message);
 
