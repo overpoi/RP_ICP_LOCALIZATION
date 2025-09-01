@@ -1,0 +1,14 @@
+<launch>
+  <node name="localizer_node" pkg="icp_localization" type="localizer_node" output="screen"/>
+
+  <!-- StageROS -->
+  <node name="stageros" pkg="stage_ros" type="stageros" args="$(find icp_localization)/test_data/cappero.world" output="screen"/>
+
+  <!-- Map -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find icp_localization)/test_data/cappero_map.yaml" output="screen"/>
+
+  <!-- Rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args="-d $(find icp_localization)/test_data/rviz.rviz"/>
+</launch>
+
+
