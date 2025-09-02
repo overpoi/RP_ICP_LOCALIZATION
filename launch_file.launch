@@ -1,4 +1,5 @@
 <launch>
+
   <node name="localizer_node" pkg="icp_localization" type="localizer_node" output="screen"/>
 
   <!-- StageROS -->
@@ -9,4 +10,11 @@
 
   <!-- Rviz -->
   <node name="rviz" pkg="rviz" type="rviz" respawn="false" output="screen" args="-d $(find icp_localization)/test_data/rviz.rviz"/>
+
+  <!-- Rqt console -->
+   <node name="rqt_console" pkg="rqt_console" type="rqt_console" output="screen" launch-prefix="bash -c 'sleep 15; exec $0 $@'"/>
+
+  <!-- Teleop Twist keyboard--> 
+  <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" launch-prefix="xterm -e bash -lc 'sleep 15; rosrun teleop_twist_keyboard teleop_twist_keyboard.py cmd_vel:=/cmd_vel'"/>
+  
 </launch>
