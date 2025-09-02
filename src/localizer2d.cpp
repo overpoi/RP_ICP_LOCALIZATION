@@ -39,7 +39,7 @@ void Localizer2D::setMap(std::shared_ptr<Map> map_) {
     for (int c = 0; c < cols; ++c) {
       if ((*_map)(r,c) == CellType::Occupied) { 
         cv::Point2i grid_point(r,c); //create obstacle grid coord of obstacle
-        std::cerr << "grid_point (" << grid_point.x << ", " << grid_point.y << ")" << std::endl;
+        //std::cerr << "grid_point (" << grid_point.x << ", " << grid_point.y << ")" << std::endl;
 
         Eigen::Vector2f world_point = _map -> grid2world(grid_point); //map grid coord --> world coord
         std::cerr << "world_point (" << world_point[0] << ", " << world_point[1] << ")" << std::endl;
@@ -78,11 +78,11 @@ void Localizer2D::setInitialPose(const Eigen::Isometry2f& initial_pose_) {
  *
  * @param scan_
  */
-void Localizer2D::process(const ContainerType& scan_) {
+void Localizer2D::process(const ContainerType& scan_) { //input scan is converted in cartesian by sacn2eigen (loc_node)
   // Use initial pose to get a synthetic scan to compare with scan_
   // TODO
-  ContainerType prediction;
-  getPrediction(prediction); //predicted scan
+  ContainerType prediction; //empty vector of eigen alligned points
+  getPrediction(prediction); //serach KD tree for obstacles, check which points fall inside fov, append coord of visible obstacles
 
 
 
